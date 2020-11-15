@@ -195,12 +195,31 @@ module Sink_input = struct
   (* Sink with buffered input.  No changes to acc. The input is a "volatile"
      buffer. The sink must explicitly discard the contents. *)
 
-  module type Buffer = sig
+  module type Input = sig
     (*
 
      Reading data from the buffer with !{val:get} and !{val:fold} does not
      consume it. To mark the data as consumed use {!val:next}, {!val:drop},
      {!val:drop_while} or {!discard}.
+
+     Data access:
+     - The sink has access to all data passed in the buffer.
+     - The buffer (or higher-level abstraction must control the flow of data, i.e. flush it).
+     - The sink does not need to worry about the source terminating early, the fusion code must decide when to stop the sink early.
+
+     {2 Consuming data}
+
+     - The memory for the consumed data will be released and no longer available.
+     - The data can be consumed with [next, slice, take, drop, discard].
+
+
+     Termination:
+     - In pipelines: "Signals to the producer that the consumer is done reading."
+       - We don't need this in streaming because sources and sinks are completely decoupled.
+       - The [Stream] (i.e. the fuser) will check when the sink is done and signal terminate to the source.
+
+      Requesting more data:
+      - Buffer.request : int -> 'a t -> unit
 
      Requirements:
 
@@ -225,19 +244,33 @@ module Sink_input = struct
 
     val of_array : 'a array -> 'a t
 
+    val to_array : 'a t -> 'a array
+
     val fold : ('r -> 'a -> 'r) -> 'r -> 'a t -> 'r
 
     val len : 'a t -> int
     (* The length of the buffer. Does not consume the buffer. *)
 
+    val find : ('a -> bool) -> 'a t -> 'a option
+    (** [find predicate buf] returns the first leftmost element from [buf]
+        matching [predicate], or [None] if there is no such element. *)
+
     val get : int -> 'a t -> 'a option
-    (** [get i buf] ob *)
+    (** [get i buf] obtains the element at index [i] from [buf].
+        Does not remove the element from the buffer. *)
 
     val next : 'a t -> 'a option
-    (** [next buf] gets (and removes) the first element from [buf]. *)
+    (** [next buf] obtains and removes the first element from [buf]. *)
 
-    val slice : start:int -> stop:int -> 'a t -> unit
-    (** [slice ~start ~stop buf] if a new buffer with ... the  *)
+    (* XXX: Should elements before [start] be discarded?
+            Probably better to remove slice to avoid this inconsistency. *)
+    val slice : start:int -> stop:int -> 'a t -> 'a slice
+    (** [slice ~start ~stop buf] obtains and removes all elements with indices
+        from [start] to [stop] from [buf], returning them as a slice. *)
+
+    val take : int -> 'a t -> 'a slice
+    (** [take n] obtains and removes the first [n] elements from [buf],
+        returning them as a slice. *)
 
     val drop : int -> 'a t -> unit
     (** [drop n buf] drops the first [n] elements dropped in [buf]. The dropped
@@ -249,14 +282,19 @@ module Sink_input = struct
 
     val discard : 'a t -> unit
     (** [discard buf] marks the buffer as discarded. Must be called when
-        [buf]'s content has been consumed by the sink.
+        [buf]'s content is no longer needed by the sink.
+
+        {b Warning:} If the sink does not consume the elements of the buffer
+        or discard the entire buffer, the buffer will be pushed again into
+        the sink with the updated state. This can be desired if the sink
+        requires more input.
 
         {b Warning:} Reading data from a discarded buffer is undefined
-        behaviour. In practice the buffer may raise [Invalid_argument] or act
-        as an empty buffer. *)
+        behaviour. In practice the buffer operations may raise [Invalid_argument]
+        or act as an empty buffer. *)
   end
 
-  module Buffer : Buffer = struct
+  module Input : Input = struct
     type 'a t = {
       data : 'a array;
       mutable offset : int;
@@ -308,7 +346,7 @@ module Sink_input = struct
   type ('a, 'b) sink =
     Sink : {
       init : unit -> 'acc;
-      push : 'acc -> 'a Buffer.t -> 'acc;
+      push : 'acc -> 'a Input.t -> 'acc;
       full : 'acc -> bool;
       stop : 'acc -> 'b;
     } -> ('a, 'b) sink
@@ -324,8 +362,8 @@ module Sink_input = struct
     let init () = 0 in
     let full _ = false in
     let push n buf =
-      let len = Buffer.len buf in
-      Buffer.discard buf;
+      let len = Input.len buf in
+      Input.discard buf;
       len + n
     in
     let stop state = state in
@@ -334,8 +372,8 @@ module Sink_input = struct
   let fold f init =
     let init () = init in
     let push s buf =
-      let r = Buffer.fold f s buf in
-      Buffer.discard buf;
+      let r = Input.fold f s buf in
+      Input.discard buf;
       r
     in
     let stop s = s in
@@ -362,7 +400,7 @@ module Sink_input = struct
       | `Unsatisfied x -> Error (`Unsatisfied x)
       | `End_of_input -> Error `End_of_input in
     let push _did_consume buf =
-      match Buffer.next buf with
+      match Input.next buf with
       | Some x when condition x -> `Satisfied x
       | Some x -> `Unsatisfied x
       | None -> `End_of_input
@@ -379,7 +417,7 @@ module Sink_input = struct
       | `Unsatisfied x -> Error (`Unsatisfied x)
       | `End_of_input -> Error `End_of_input in
     let push _did_consume buf =
-      match Buffer.next buf with
+      match Input.next buf with
       | Some x -> `Satisfied x
       | None -> `End_of_input
     in
@@ -406,7 +444,7 @@ module Sink_input = struct
     let push s buf =
       if full s then
         invalid_arg "Push called on a full sink.";
-      match Buffer.next buf with
+      match Input.next buf with
       | Some actual when expected = actual -> `Consumed
       | Some actual -> `Unexpected actual
       | None -> `Incomplete
@@ -427,12 +465,60 @@ let sink_input_demo () =
   let S.Sink k = S.consume 'x' in
 
   let rec loop buf r =
-    if S.Buffer.len buf = 0 then r else
+    if S.Input.len buf = 0 then r else
     if k.full r then r else
     loop buf (k.push r buf) in
-  let buf = S.Buffer.of_array [|'x'; 'y'; 'z'|] in
+  let buf = S.Input.of_array [|'x'; 'y'; 'z'|] in
   let r0 = k.init () in
-  let r' = loop buf r0 in
-  k.stop r'
+  let r = loop buf r0 in
+  k.stop r
+
+module Buffer = Sink_input.Input
+
+module Slice = struct
+  type 'a t
+end
+
+let try_read_line (buf : char Buffer.t) : char Slice.t =
+   match Buffer.find (fun x -> x = '\n') buf with
+   | Some newline_index ->
+     let line = Buffer.slice ~start:0 ~stop:newline_index buf in
+     Buffer.drop 1 buf; (* drop the '\n' *)
+     Some line
+   | None -> None
 
 
+let lines_sink () =
+  let init () = [] in
+  let push lines buf =
+    match Buffer.find (fun x -> x = '\n') buf with
+    | Some newline_index ->
+      (* XXX: Read data. This might trigger a request to the source *)
+      let line = Buffer.take newline_index buf in
+      Buffer.drop 1 buf; (* drop the '\n' *)
+      line :: lines
+    | None -> acc in
+  let stop lines = List.rev lines in
+  let full _ = false in
+  Sink { init; push; stop; full }
+
+
+
+let stdin_bytes_source output =
+  let init () = Unix.stdin in
+  let pull fd =
+    (* No local allocations are made. Pipe manages buffers. *)
+    (* Request a buffer, instead of allocating a new one. *)
+    (* XXX: How do we control read throughput?
+            The pipe should have a mechanism to introduce delays. *)
+    let buf = Pipe.request ~size_hint:512 output in
+    let n = Unix.read fd buf 0 512 in
+    if n = 0 then None
+    else
+      (* Add buffer back to Pipe. *)
+      (* Alternatively Pipe.advance n pipe. *)
+      (* Do we want to flush async to notify reader and apply backpressure? *)
+      Some (Pipe.add_bytes buf ~len:n output)
+  in
+  let stop _buf = () in
+  Source.make () ~init ~pull ~stop
