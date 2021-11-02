@@ -57,7 +57,7 @@ let flat_map f (Sink top) =
     | Flat_map_sub sub -> sub.stop sub.init in
   Sink { init; push; full; stop }
 
-let (>>=) m f = flat_map f m
+(* let (>>=) m f = flat_map f m *)
 
 (* -- Make sure the the stream contains at least one space. Skip it. *)
 (* space :: Monad m => Iteratee Char m () *)
@@ -180,11 +180,11 @@ module Stream_p = struct
   let expect expected = fun input ->
     match input with
     | [] -> error `End_of_input
-    | actual :: leftover when actual = expected -> return actual
-    | actual :: leftover -> error (`Unexpected_token actual)
+    | actual :: _leftover when actual = expected -> return actual
+    | actual :: _leftover -> error (`Unexpected_token actual)
 
 
-  let consume expected =
-    expect expected >>= fun _ -> advance
+  (* let consume expected =
+    expect expected >>= fun _ -> advance *)
 end
 

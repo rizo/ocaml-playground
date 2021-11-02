@@ -1,0 +1,5 @@
+(executable
+ (name Test_streaming_lwt)
+ (libraries Ocaml_playground)
+ (preprocess
+  (pps lwt_ppx)))

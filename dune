@@ -1,4 +1,6 @@
-
 (library
-  (name OCaml_playgroudn))
+ (name Ocaml_playground)
+ (libraries lwt lwt.unix ptime fmt)
+ (preprocess
+  (pps lwt_ppx)))
 

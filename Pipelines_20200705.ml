@@ -1,5 +1,7 @@
 
 
+(*
+
 let frameHeader = [| 0xFF; 0xd8 |].AsSpan()
 
 let findStreamDelimiter (search:Span) (buffer:Span) : Nullable =
@@ -72,7 +74,7 @@ let processFrame (request : HttpWebRequest) (progress : IProgress) = task {
     let writing = writePipe cameraStream pipe.Writer
     let reading = readPipe pipe.Reader
     do! Task.WhenAll(reading, writing) }>
-
+*)
 
 module type PipeReader = sig
   type 'a t

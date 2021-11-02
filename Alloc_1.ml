@@ -32,10 +32,9 @@ module M1 = struct
   let fallback (Alloc a1) (Alloc a2) =
     let alloc size =
       let block = a1.alloc size in
-      let block =
-        if Block.null block then
-          a2.alloc size
-        else block
-      in
-    Alloc { alloc... }
+      if Block.null block then
+        a2.alloc size
+      else block
+    in
+    Alloc { a1 with alloc }
 end

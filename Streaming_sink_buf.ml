@@ -189,6 +189,7 @@ module Sink_state = struct
   (*   k.stop (loop l (k.init ())) *)
 end
 
+type 'a slice
 
 
 module Sink_input = struct
@@ -294,7 +295,7 @@ module Sink_input = struct
         or act as an empty buffer. *)
   end
 
-  module Input : Input = struct
+  module Input  = struct
     type 'a t = {
       data : 'a array;
       mutable offset : int;
@@ -479,16 +480,16 @@ module Slice = struct
   type 'a t
 end
 
-let try_read_line (buf : char Buffer.t) : char Slice.t =
+(* let try_read_line (buf : char Buffer.t) : char Slice.t =
    match Buffer.find (fun x -> x = '\n') buf with
    | Some newline_index ->
      let line = Buffer.slice ~start:0 ~stop:newline_index buf in
      Buffer.drop 1 buf; (* drop the '\n' *)
      Some line
-   | None -> None
+   | None -> None *)
 
 
-let lines_sink () =
+(* let lines_sink () =
   let init () = [] in
   let push lines buf =
     match Buffer.find (fun x -> x = '\n') buf with
@@ -500,11 +501,11 @@ let lines_sink () =
     | None -> acc in
   let stop lines = List.rev lines in
   let full _ = false in
-  Sink { init; push; stop; full }
+  Sink { init; push; stop; full } *)
 
 
 
-let stdin_bytes_source output =
+(* let stdin_bytes_source output =
   let init () = Unix.stdin in
   let pull fd =
     (* No local allocations are made. Pipe manages buffers. *)
@@ -521,4 +522,4 @@ let stdin_bytes_source output =
       Some (Pipe.add_bytes buf ~len:n output)
   in
   let stop _buf = () in
-  Source.make () ~init ~pull ~stop
+  Source.make () ~init ~pull ~stop *)

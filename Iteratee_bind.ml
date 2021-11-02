@@ -14,7 +14,7 @@ module Iteratee_orig = struct
         | Done b, a ->
           begin
             match f b with
-            | Cont k' -> k a
+            | Cont k' -> k' a
             | iter -> (iter, a)
           end
         | (iter, a) -> (iter >>= f, a)
