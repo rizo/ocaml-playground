@@ -1,0 +1,3 @@
+(executable
+ (name Bench)
+ (libraries core_bench pvec))
