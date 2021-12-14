@@ -117,21 +117,73 @@ module Sink = struct
         full = (fun _ -> full);
         stop = (fun acc -> Lwt.return acc);
       }
+
+
+  let print_for_duration duration =
+    let timer = ref Lwt.return_unit in
+    let init () =
+      timer := Lwt_unix.sleep duration;
+      Lwt.return_unit
+    in
+    let push () x =
+      print_endline x;
+      Lwt.return_unit
+    in
+    let full () = !timer in
+    let stop () =
+      Lwt.cancel !timer;
+      Lwt.return ()
+    in
+    Sink { init; push; full; stop }
+
+
+  type 'a list_only = { mutable count : int; mutable list : 'a list }
+
+  let list_only n =
+    let full_thread, full_resolver = Lwt.task () in
+    let init () = Lwt.return { count = 0; list = [] } in
+    let push acc x =
+      if acc.count = n - 1 then (
+        acc.list <- x :: acc.list;
+        Lwt.wakeup full_resolver ();
+        Lwt.return acc)
+      else (
+        acc.list <- x :: acc.list;
+        acc.count <- acc.count + 1;
+        Lwt.return acc)
+    in
+    let full _ = full_thread in
+    let stop { list; _ } = Lwt.return (List.rev list) in
+    Sink { init; push; full; stop }
 end
 
 module Flow = struct
+  type 'inner_acc take = {
+    mutable inner_acc : 'inner_acc;
+    counter : int;
+    full : unit Lwt.t;
+    full_resolver : unit Lwt.u;
+  }
+
   let take n =
     let flow (Sink snk) =
-      let i = ref 0 in
-      let full_waiter, full_resolver = Lwt.task () in
-      let push acc x =
-        if !i = n then Lwt.wakeup full_resolver ();
-        let%lwt acc' = snk.push acc x in
-        incr i;
-        Lwt.return acc'
+      let init () =
+        let full, full_resolver = Lwt.wait () in
+        let%lwt inner_acc = snk.init () in
+        Lwt.return { inner_acc; counter = 0; full; full_resolver }
       in
-      let full acc = Lwt.pick [ snk.full acc; full_waiter ] in
-      Sink { init = snk.init; push; full; stop = snk.stop }
+      let push acc x =
+        let%lwt inner_acc = snk.push acc.inner_acc x in
+        acc.inner_acc <- inner_acc;
+        if acc.counter = n - 1 then (
+          Lwt.wakeup acc.full_resolver ();
+          Lwt.return acc)
+        else Lwt.return { acc with counter = acc.counter + 1 }
+      in
+
+      let full acc = Lwt.pick [ snk.full acc.inner_acc; acc.full ] in
+      let stop acc = snk.stop acc.inner_acc in
+      Sink { init; push; full; stop }
     in
     { flow }
 
@@ -140,46 +192,33 @@ module Flow = struct
     let flow (Sink k) =
       let timer = ref Lwt.return_unit in
       let init () =
-        let%lwt k_s = k.init () in
+        let%lwt inner_acc = k.init () in
         timer := Lwt_unix.sleep n;
-        Lwt.return k_s
+        Lwt.return inner_acc
       in
       let push acc x = k.push acc x in
       let stop acc = k.stop acc in
-      let full k_s = Lwt.pick [ k.full k_s; !timer ] in
+      let full inner_acc = Lwt.pick [ k.full inner_acc; !timer ] in
       Sink { init; push; full; stop }
     in
     { flow }
 
 
-  type ('a, 'k_s) group_by_time = {
-    mutable k_s : 'k_s;
-    mutable group : 'a list;
+  type ('group_acc, 'inner_acc) group_by_time = {
+    mutable inner_acc : 'inner_acc;
+    mutable group_acc : 'group_acc;
     mutable group_interval : float;
     mutable group_timer : unit Lwt.t;
   }
 
-  let group_by_time resolution =
-    let flow (Sink k) =
-      let s0 =
-        {
-          k_s = Obj.magic ();
-          group = [];
-          group_interval = 0.0;
-          group_timer = Lwt.return_unit;
-        }
-      in
-
-      let add_to_group s x =
-        log "group_by_time: add_to_group";
-        s.group <- x :: s.group;
-        Lwt.return s
-      in
-
+  let group_by_time ~into:(Sink group_snk) resolution =
+    let flow (Sink inner_snk) =
       let push_group s =
-        log "group_by_time: push_group";
-        let%lwt k_s' = k.push s.k_s (List.rev s.group) in
-        s.k_s <- k_s';
+        let%lwt group = group_snk.stop s.group_acc in
+        let%lwt inner_acc' = inner_snk.push s.inner_acc group in
+        s.inner_acc <- inner_acc';
+        let%lwt group_acc = group_snk.init () in
+        s.group_acc <- group_acc;
         Lwt.return_unit
       in
 
@@ -192,52 +231,49 @@ module Flow = struct
         in
         s.group_timer <- start_group_timer delay_until_next s
       and start_group_timer duration s =
-        log "group_by_time: start_group_timer";
-        (* if%lwt k.full s.k_s then Lwt.return_unit
-           else *)
         let%lwt () = Lwt_unix.sleep duration in
-        log "group_by_time: start_group_timer - expired";
         let%lwt () = push_group s in
         reset_group_timer s;
         Lwt.return_unit
-      and stop_group_timer s =
-        Lwt.cancel s.group_timer;
-        s.group_timer <- Lwt.return_unit
       in
 
       let init () =
-        log "group_by_time: init";
-        let%lwt k_s0 = k.init () in
-        s0.k_s <- k_s0;
-        (* if%lwt k.full k_s0 then Lwt.return s0
-           else *)
-        reset_group_timer s0;
-        Lwt.return s0
+        let%lwt inner_acc = inner_snk.init () in
+        let%lwt group_acc = group_snk.init () in
+
+        let acc =
+          {
+            inner_acc;
+            group_acc;
+            group_interval = 0.0;
+            group_timer = Lwt.return_unit;
+          }
+        in
+        reset_group_timer acc;
+        Lwt.return acc
       in
 
       let push s x =
         let now = Unix.gettimeofday () in
-        if time_belongs_to_span ~span:s.group_interval ~resolution now then
-          add_to_group s (now, x)
+        if time_belongs_to_span ~span:s.group_interval ~resolution now then begin
+          let%lwt group_acc' = group_snk.push s.group_acc (now, x) in
+          s.group_acc <- group_acc';
+          Lwt.return s
+        end
         else begin
-          log "group_by_time: push - new group";
           reset_group_timer s;
           let%lwt () = push_group s in
-          add_to_group s (now, x)
+          let%lwt group_acc' = group_snk.push s.group_acc (now, x) in
+          s.group_acc <- group_acc';
+          Lwt.return s
         end
       in
 
-      let full s = k.full s.k_s in
+      let full acc = inner_snk.full acc.inner_acc in
 
-      let stop s =
-        log "group_by_time: stop";
-        stop_group_timer s;
-        log "group_by_time: canceled group_timer";
-        let%lwt () =
-          let full = k.full s.k_s in
-          if lwt_is_resolved full then Lwt.return_unit else push_group s
-        in
-        k.stop s.k_s
+      let stop acc =
+        Lwt.cancel acc.group_timer;
+        inner_snk.stop acc.inner_acc
       in
 
       Sink { init; push; full; stop }
@@ -292,31 +328,30 @@ module Stream = struct
 
   let from (Source src) =
     let stream (Sink snk) =
-      let%lwt r = Lwt.map ref (snk.init ()) in
-      let rec loop s =
+      let rec loop s r =
         match%lwt src.pull s with
         | None ->
           let%lwt () = src.stop s in
-          snk.stop !r
+          snk.stop r
         | Some (x, s') ->
-          let%lwt r' = snk.push !r x in
-          r := r';
-          loop s'
+          let%lwt r' = snk.push r x in
+          loop s' r'
       in
+      let%lwt r0 = snk.init () in
       Lwt.pick
         [
-          (let%lwt () = snk.full !r in
-           snk.stop !r);
+          (let%lwt () = snk.full r0 in
+           snk.stop r0);
           (let%lwt s0 =
              try%lwt src.init ()
              with exn ->
-               let%lwt _ = snk.stop !r in
+               let%lwt _ = snk.stop r0 in
                raise exn
            in
-           try%lwt loop s0
+           try%lwt loop s0 r0
            with exn ->
              let%lwt () = src.stop s0 in
-             let _ = snk.stop !r in
+             let _ = snk.stop r0 in
              raise exn);
         ]
     in

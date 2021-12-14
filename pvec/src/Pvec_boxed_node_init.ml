@@ -16,6 +16,12 @@ let array_copy_and_add array x =
   out
 
 
+module Config = struct
+  let shift_bits = 2
+
+  let node_size = ipow 2 shift_bits
+end
+
 type 'a t = {
   (* Root node links. *)
   root : 'a node array;
@@ -33,64 +39,66 @@ and 'a node =
   (* Leaf node holds the actual data values. *)
   | Data of 'a array
 
-let shift_by = 2
+let empty : 'a t =
+  { root = [||]; len = 0; tail = [||]; shift = Config.shift_bits }
 
-let node_size = ipow 2 shift_by
 
-let empty : 'a t = { root = [||]; len = 0; tail = [||]; shift = shift_by }
+let singleton a =
+  { root = [||]; len = 1; shift = Config.shift_bits; tail = [| a |] }
 
-let singleton a = { root = [||]; len = 1; shift = shift_by; tail = [| a |] }
 
 let len t = t.len
 
-let link = function
+let get_link = function
   | Link a -> a
   | Data _ -> failwith "link request on data node"
 
 
-let data = function
+let get_data = function
   | Data a -> a
   | Link _ -> failwith "data request on link node"
 
 
-let of_array array =
-  let len = Array.length array in
-  if len = node_size then { root = [||]; tail = array; len; shift = shift_by }
-  else if len < node_size then
-    { root = [||]; tail = array; len; shift = shift_by }
-  else
-    let rec loop idx = failwith "" in
-    loop 0
+(* Translate a global index into an index for a link node, where [shift] is the
+   current shift of the node. *)
+let get_link_idx ~shift idx = (idx lsr shift) land (Config.node_size - 1)
 
+(* Translate a global index into an index for a data node. *)
+let get_data_idx idx = idx land (Config.node_size - 1)
 
-(* mask(t::BitmappedTrie, i::Int) = (((i - 1) >>> shift(t)) & (trielen - 1)) + 1 *)
+(* Translate a global index into an index for the root node, where [shift] is
+   the maximum shift of the tree. *)
+let get_root_idx ~shift idx = idx lsr shift
 
-(* Apply a mask to translate a global index into an index in a tree sub-node. *)
-let sub_idx_mask ~level idx = (idx lsr level) land (node_size - 1)
-
+(* The offest of the tail node in the tree. *)
 let tail_offset len =
-  if len < node_size then 0 else ((len - 1) lsr shift_by) lsl shift_by
+  if len < Config.node_size then 0
+  else ((len - 1) lsr Config.shift_bits) lsl Config.shift_bits
 
 
-let node_with_index idx t =
-  if idx >= tail_offset t.len then Data t.tail
+(* Find the leaf data node for a given global index in the tree. *)
+let data_node_for_index idx t =
+  if idx >= tail_offset t.len then t.tail
   else
-    let rec loop level node =
-      if level = 0 then node
+    let rec loop shift node =
+      if shift = 0 then get_data node
       else
-        let sub_idx = sub_idx_mask ~level idx in
-        loop (level - shift_by) (Array.get (link node) sub_idx)
+        let link_idx = get_link_idx ~shift idx in
+        loop (shift - Config.shift_bits) (Array.get (get_link node) link_idx)
     in
-    loop (t.shift - shift_by) (Array.get t.root (idx lsr t.shift))
+    let root_idx = get_root_idx ~shift:t.shift idx in
+    loop (t.shift - Config.shift_bits) (Array.get t.root root_idx)
 
 
 let idx t idx =
-  let node = node_with_index idx t in
-  Array.get (data node) (idx land (node_size - 1))
+  let data = data_node_for_index idx t in
+  let data_idx = get_data_idx idx in
+  Array.get data data_idx
 
 
 let rec new_path level tail =
-  if level = 0 then Data tail else Link [| new_path (level - shift_by) tail |]
+  if level = 0 then Data tail
+  else Link [| new_path (level - Config.shift_bits) tail |]
 
 
 (* Pushes the tail array to its correct location in the tree.
@@ -98,9 +106,9 @@ let rec new_path level tail =
    If index maps to the existing child, extend the child with a Link to tail.
    Otherwise add a new child to parent with a tail node. *)
 let rec push_tail len level (parent : 'a node array) tail : 'a node array =
-  let sub_idx = ((len - 1) lsr level) land (node_size - 1) in
+  let sub_idx = ((len - 1) lsr level) land (Config.node_size - 1) in
   (* Parent is a leaf node. *)
-  if level = shift_by then
+  if level = Config.shift_bits then
     let target = Data tail in
     let parent' = array_copy_and_add parent target in
     parent'
@@ -108,14 +116,16 @@ let rec push_tail len level (parent : 'a node array) tail : 'a node array =
        Replace the child with a link to target. *)
   else if sub_idx < Array.length parent then (
     let child = Array.get parent sub_idx in
-    let target = Link (push_tail len (level - shift_by) (link child) tail) in
+    let target =
+      Link (push_tail len (level - Config.shift_bits) (get_link child) tail)
+    in
     let parent' = Array.copy parent in
     Array.set parent' sub_idx target;
     parent'
     (* Does not map to existing child.
        Create a link and add path. *))
   else
-    let target = new_path (level - shift_by) tail in
+    let target = new_path (level - Config.shift_bits) tail in
     let parent' = array_copy_and_add parent target in
     parent'
 
@@ -123,19 +133,19 @@ let rec push_tail len level (parent : 'a node array) tail : 'a node array =
 let add t x =
   if t.len = 0 then (* Tree is empty. Return a singleton vec. *)
     singleton x
-  else if t.len land (node_size - 1) <> 0 then
+  else if t.len land (Config.node_size - 1) <> 0 then
     (* Tail update.
        Tail node has room for another element.
        Duplicate the old tail and add a new element.
        Return the updated vector with incremented len and a new tail. *)
     { t with len = t.len + 1; tail = array_copy_and_add t.tail x }
-  else if t.len lsr shift_by > 1 lsl t.shift then
+  else if t.len lsr Config.shift_bits > 1 lsl t.shift then
     (* Root overflow
        The current len requires another shift.
        Replace the current root with a new one and add the tail to the tree. *)
     {
       len = t.len + 1;
-      shift = t.shift + shift_by;
+      shift = t.shift + Config.shift_bits;
       tail = [| x |];
       root = [| Link t.root; new_path t.shift t.tail |];
     }
@@ -148,6 +158,22 @@ let add t x =
       tail = [| x |];
       root = push_tail t.len t.shift t.root t.tail;
     }
+
+
+let of_array input =
+  let len = Array.length input in
+  if len = Config.node_size then
+    { root = [||]; tail = input; len; shift = Config.shift_bits }
+  else if len < Config.node_size then
+    { root = [||]; tail = input; len; shift = Config.shift_bits }
+  else
+    let loop parent idx =
+      (* XXX: check array bounds *)
+      let data = Data (Array.sub input idx Config.node_size) in
+
+      failwith ""
+    in
+    loop 0
 
 
 let of_list l = List.fold_left (fun t x -> add t x) empty l

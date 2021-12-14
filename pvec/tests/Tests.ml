@@ -1,3 +1,5 @@
+module Pvec = Pvec.Pvec_boxed_node_init
+
 let%test "singleton" = Pvec.idx (Pvec.singleton 0) 0 = 0
 
 let%test "three" =
