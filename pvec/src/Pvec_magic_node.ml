@@ -128,6 +128,11 @@ let add v x =
 
 let of_list l = List.fold_left (fun v x -> add v x) empty l
 
+let iota n =
+  let rec loop i acc = if i = n then acc else loop (i + 1) (add acc i) in
+  loop 0 empty
+
+
 let get indexable i =
   let len = len indexable in
   let i = if i < 0 then len + i else i in

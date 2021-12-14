@@ -7,6 +7,7 @@ cases-exp-indent = 2
 margin = 80
 parse-docstrings = true
 wrap-comments = false
+doc-comments=before-except-val
 break-cases=fit-or-vertical
 module-item-spacing=preserve
 let-binding-spacing=sparse

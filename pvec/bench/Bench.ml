@@ -1,15 +1,14 @@
-let input_sizes = [ 1; 10; 100; 200; 300; 400 ]
-
-let array_input = Array.init 10_000 (fun x -> x)
-let pvec_input = Pvec.of_list (Array.to_list array_input)
-
-let array_get () = ignore (Array.get array_input 100)
-let pvec_get () = ignore (Pvec.idx pvec_input 100)
+let input_sizes = [ 1; 10; 100; 1_000; 10_000; 100_000 ]
 
 open Core_bench
 
 let () =
   Bench.Test.
-    [ create ~name:"array_get" array_get; create ~name:"pvec_get" pvec_get ]
+    [
+      create_indexed ~name:"boxed" ~args:input_sizes (fun len ->
+          Core.Staged.stage (fun () -> Pvec.Pvec_boxed_node.iota len));
+      create_indexed ~name:"magic" ~args:input_sizes (fun len ->
+          Core.Staged.stage (fun () -> Pvec.Pvec_magic_node.iota len));
+    ]
   |> Bench.make_command
   |> Core.Command.run

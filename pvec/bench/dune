@@ -1,3 +1,4 @@
 (executable
  (name Bench)
- (libraries core_bench pvec))
+ (libraries core_bench pvec)
+ (ocamlopt_flags -unbox-closures -O3))
