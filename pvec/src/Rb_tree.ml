@@ -48,6 +48,11 @@ and 'a node =
   (* Leaf node holds the actual data values. *)
   | Leaf of 'a array
 
+let copy_node = function
+  | Branch arr -> Branch (Array.copy arr)
+  | Leaf arr -> Leaf (Array.copy arr)
+
+
 let empty : 'a t =
   { root = [||]; len = 0; tail = [||]; shift = Config.bits_per_shift }
 
@@ -78,12 +83,14 @@ let root_index ~shift key = key lsr shift
 
 let branch_index ~shift key = (key lsr shift) land (Config.branch_factor - 1)
 
-let leaf_lookup ~key leaf = Array.get leaf (leaf_index key)
+let leaf_get ~key leaf = Array.get leaf (leaf_index key)
 
-let root_lookup ~key t = Array.get t.root (root_index ~shift:t.shift key)
+let root_get ~key t = Array.get t.root (root_index ~shift:t.shift key)
 
-let branch_lookup ~shift ~key branch =
-  Array.get branch (branch_index ~shift key)
+let branch_get ~shift ~key branch = Array.get branch (branch_index ~shift key)
+
+let branch_set ~shift ~key v branch =
+  Array.set branch (branch_index ~shift key) v
 
 
 let leaf_update ~key v leaf =
@@ -105,37 +112,38 @@ let find_leaf_for_key key t =
     let rec loop shift node =
       if is_leaf_shift shift then unwrap_leaf node
       else
-        let node' = branch_lookup ~shift ~key (unwrap_branch node) in
+        let node' = branch_get ~shift ~key (unwrap_branch node) in
         loop (shift - Config.bits_per_shift) node'
     in
-    let node = root_lookup ~key t in
+    let node = root_get ~key t in
     loop (t.shift - Config.bits_per_shift) node
 
 
 let idx key t =
   (* log "idx: key_dec=%d key_bin=%a t.shift=%d" key pp_bin key t.shift; *)
   let leaf = find_leaf_for_key key t in
-  leaf_lookup ~key leaf
+  leaf_get ~key leaf
 
 
-let set key v t =
-  if key >= tail_offset t.len && key < t.len then
-    (* The element is in the tail *)
-    { t with tail = leaf_update ~key v t.tail }
+let set key value self =
+  if key >= tail_offset self.len && key < self.len then
+    (* Tail mutation *)
+    { self with tail = leaf_update ~key value self.tail }
   else
-    (* The element is in the root. *)
-    let rec loop shift node =
-      if is_leaf_shift shift then unwrap_leaf node
+    (* Root mutation *)
+    let rec loop shift node_copy =
+      if is_leaf_shift shift then unwrap_leaf node_copy
       else
-        let node' = branch_lookup ~shift ~key (unwrap_branch node) in
-        let node'_copy = Array.copy node' in
-        loop (shift - Config.bits_per_shift) node'
+        (* Find and copy the child for key updating the branch. *)
+        let children_copy = unwrap_branch node_copy in
+        let child_copy = copy_node (branch_get ~shift ~key children_copy) in
+        branch_set ~shift ~key child_copy children_copy;
+        loop (shift - Config.bits_per_shift) child_copy
     in
-    let t_copy = { t with root = Array.copy t.root } in
-    let node = root_lookup ~key t in
-    let leaf = loop (t.shift - Config.bits_per_shift) node in
-    Array.set leaf (leaf_index key) v;
-    t_copy
+    let copy = { self with root = Array.copy self.root } in
+    let leaf = loop self.shift (Branch copy.root) in
+    Array.set leaf (leaf_index key) value;
+    copy
 
 
 let rec new_path level tail =
@@ -175,33 +183,33 @@ let rec push_tail len level (parent : 'a node array) tail : 'a node array =
     parent'
 
 
-let push t x =
-  if t.len = 0 then (* Tree is empty. Return a singleton vec. *)
+let push x self =
+  if self.len = 0 then (* Tree is empty. Return a singleton vec. *)
     singleton x
-  else if t.len land (Config.branch_factor - 1) <> 0 then
+  else if self.len land (Config.branch_factor - 1) <> 0 then
     (* Tail update.
-       Tail node has room for another element.
-       Duplicate the old tail and add a new element.
+       Tail node has room for another elemenself.
+       Duplicate the old tail and add a new elemenself.
        Return the updated vector with incremented len and a new tail. *)
-    { t with len = t.len + 1; tail = array_copy_and_add t.tail x }
-  else if t.len lsr Config.bits_per_shift > 1 lsl t.shift then
+    { self with len = self.len + 1; tail = array_copy_and_add self.tail x }
+  else if self.len lsr Config.bits_per_shift > 1 lsl self.shift then
     (* Root overflow
-       The current len requires another shift.
+       The current len requires another shifself.
        Replace the current root with a new one and add the tail to the tree. *)
     {
-      len = t.len + 1;
-      shift = t.shift + Config.bits_per_shift;
+      len = self.len + 1;
+      shift = self.shift + Config.bits_per_shift;
       tail = [| x |];
-      root = [| Branch t.root; new_path t.shift t.tail |];
+      root = [| Branch self.root; new_path self.shift self.tail |];
     }
   else
     (* Update the tree.
-       Push the tail to the root. *)
+       Push the tail to the rooself. *)
     {
-      len = t.len + 1;
-      shift = t.shift;
+      len = self.len + 1;
+      shift = self.shift;
       tail = [| x |];
-      root = push_tail t.len t.shift t.root t.tail;
+      root = push_tail self.len self.shift self.root self.tail;
     }
 
 
@@ -223,10 +231,10 @@ let of_array input =
     { root; tail = input; len; shift = Config.bits_per_shift }
 
 
-let of_list l = List.fold_left (fun t x -> push t x) empty l
+let of_list l = List.fold_left (fun self x -> push x self) empty l
 
 let iota n =
-  let rec loop i acc = if i = n then acc else loop (i + 1) (push acc i) in
+  let rec loop i self = if i = n then self else loop (i + 1) (push i self) in
   loop 0 empty
 
 
