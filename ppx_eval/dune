@@ -1,0 +1,4 @@
+(library
+  (name ppx_eval)
+  (libraries ppxlib ppxlib.astlib)
+  (kind ppx_rewriter))
