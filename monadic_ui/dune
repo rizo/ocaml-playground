@@ -1,0 +1,3 @@
+(executable
+  (name monadic_ui))
+
