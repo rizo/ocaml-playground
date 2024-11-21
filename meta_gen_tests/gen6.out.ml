@@ -1,6 +1,616 @@
 ;;let const_val = 1 in
   let computed_val = 2 + 2 in
   Format.printf "%a@." Ppxlib.Pprintast.expression
-    (Marshal.from_string
-       "\132\149\166\190\000\000\002\151\000\000\000\154\000\000\002_\000\000\002Y\192\178@\160\192\192\144\160+delayed_val\176\192)./gen6.mlDx~\192\004\002Dx\000I@\176\192\004\004Dx~\192\004\005Dx\000I@@@\192\145\160#200@\176\192\004\011Dx\000L\192\004\012Dx\000O@@@@\176\192\004\014Dxz\192\004\015Dx\000O@@\192\169\160\144\"::\176\192\004\022E\000S\000W\192\004\023E\000S\001\000\145A\144\192\152\160\192\165\192\144\160\144!+\176\192\004$E\000S\000[\192\004%E\000S\000\\@\176\192\004'E\000S\000[\192\004(E\000S\000\\@@@\160\160@\192\145\160#100@\176\192\0040E\000S\000W\192\0041E\000S\000Z@@@\160\160@\192\144\160\144)const_val\176\192\004:E\000S\000c\192\004;E\000S\000l@\176\192\004=E\000S\000c\192\004>E\000S\000l@@@@\176\192\004@E\000S\000W\192\004AE\000S\000m@@@\160\192\169\160\144\0043\176\192\004HE\000S\000o\192\004IE\000S\001\000\145A\144\192\152\160\192\144\160\144,computed_val\176\192\004TE\000S\000u\192\004UE\000S\001\000\129@\176\192\004WE\000S\000u\192\004XE\000S\001\000\129@@@\160\192\169\160\144\004J\176\192\004_E\000S\001\000\132\192\004`E\000S\001\000\145A\144\192\152\160\192\144\160\144+delayed_val\176\192\004kE\000S\001\000\132\192\004lE\000S\001\000\143@\176\192\004nE\000S\001\000\132\192\004oE\000S\001\000\143@@@\160\192\169\160\144\"[]\176\192\004wE\000S\001\000\144\192\004xE\000S\001\000\145A@\176\192\004zE\000S\001\000\144\192\004{E\000S\001\000\145A@@@\176\192\004}E\000S\001\000\132\192\004~E\000S\001\000\145A@@\176\192\004\128E\000S\001\000\132\192\004\129E\000S\001\000\145A@@@\176\192\004\131E\000S\000o\192\004\132E\000S\001\000\145A@@\176\192\004\134E\000S\000o\192\004\135E\000S\001\000\145A@@@\176\192\004\137E\000S\000W\192\004\138E\000S\001\000\145A@@\176\192\004\140E\000S\000U\192\004\141E\000S\001\000\145@@@\176\192\004\143Dxz\192\004\144E\000S\001\000\145@@@"
-       0)
+    {
+      pexp_desc =
+        (Pexp_let
+           (Nonrecursive,
+             [{
+                pvb_pat =
+                  {
+                    ppat_desc =
+                      (Ppat_var
+                         {
+                           txt = "delayed_val";
+                           loc =
+                             {
+                               loc_start =
+                                 {
+                                   pos_fname = "./gen6.ml";
+                                   pos_lnum = 4;
+                                   pos_bol = 56;
+                                   pos_cnum = 62
+                                 };
+                               loc_end =
+                                 {
+                                   pos_fname = "./gen6.ml";
+                                   pos_lnum = 4;
+                                   pos_bol = 56;
+                                   pos_cnum = 73
+                                 };
+                               loc_ghost = false
+                             }
+                         });
+                    ppat_loc =
+                      {
+                        loc_start =
+                          {
+                            pos_fname = "./gen6.ml";
+                            pos_lnum = 4;
+                            pos_bol = 56;
+                            pos_cnum = 62
+                          };
+                        loc_end =
+                          {
+                            pos_fname = "./gen6.ml";
+                            pos_lnum = 4;
+                            pos_bol = 56;
+                            pos_cnum = 73
+                          };
+                        loc_ghost = false
+                      };
+                    ppat_loc_stack = [];
+                    ppat_attributes = []
+                  };
+                pvb_expr =
+                  {
+                    pexp_desc =
+                      (Pexp_constant (Pconst_integer ("200", None)));
+                    pexp_loc =
+                      {
+                        loc_start =
+                          {
+                            pos_fname = "./gen6.ml";
+                            pos_lnum = 4;
+                            pos_bol = 56;
+                            pos_cnum = 76
+                          };
+                        loc_end =
+                          {
+                            pos_fname = "./gen6.ml";
+                            pos_lnum = 4;
+                            pos_bol = 56;
+                            pos_cnum = 79
+                          };
+                        loc_ghost = false
+                      };
+                    pexp_loc_stack = [];
+                    pexp_attributes = []
+                  };
+                pvb_attributes = [];
+                pvb_loc =
+                  {
+                    loc_start =
+                      {
+                        pos_fname = "./gen6.ml";
+                        pos_lnum = 4;
+                        pos_bol = 56;
+                        pos_cnum = 58
+                      };
+                    loc_end =
+                      {
+                        pos_fname = "./gen6.ml";
+                        pos_lnum = 4;
+                        pos_bol = 56;
+                        pos_cnum = 79
+                      };
+                    loc_ghost = false
+                  }
+              }],
+             {
+               pexp_desc =
+                 (Pexp_construct
+                    ({
+                       txt = (Lident "::");
+                       loc =
+                         {
+                           loc_start =
+                             {
+                               pos_fname = "./gen6.ml";
+                               pos_lnum = 5;
+                               pos_bol = 83;
+                               pos_cnum = 87
+                             };
+                           loc_end =
+                             {
+                               pos_fname = "./gen6.ml";
+                               pos_lnum = 5;
+                               pos_bol = 83;
+                               pos_cnum = 145
+                             };
+                           loc_ghost = true
+                         }
+                     },
+                      (Some
+                         {
+                           pexp_desc =
+                             (Pexp_tuple
+                                [{
+                                   pexp_desc =
+                                     (Pexp_apply
+                                        ({
+                                           pexp_desc =
+                                             (Pexp_ident
+                                                {
+                                                  txt = (Lident "+");
+                                                  loc =
+                                                    {
+                                                      loc_start =
+                                                        {
+                                                          pos_fname =
+                                                            "./gen6.ml";
+                                                          pos_lnum = 5;
+                                                          pos_bol = 83;
+                                                          pos_cnum = 91
+                                                        };
+                                                      loc_end =
+                                                        {
+                                                          pos_fname =
+                                                            "./gen6.ml";
+                                                          pos_lnum = 5;
+                                                          pos_bol = 83;
+                                                          pos_cnum = 92
+                                                        };
+                                                      loc_ghost = false
+                                                    }
+                                                });
+                                           pexp_loc =
+                                             {
+                                               loc_start =
+                                                 {
+                                                   pos_fname = "./gen6.ml";
+                                                   pos_lnum = 5;
+                                                   pos_bol = 83;
+                                                   pos_cnum = 91
+                                                 };
+                                               loc_end =
+                                                 {
+                                                   pos_fname = "./gen6.ml";
+                                                   pos_lnum = 5;
+                                                   pos_bol = 83;
+                                                   pos_cnum = 92
+                                                 };
+                                               loc_ghost = false
+                                             };
+                                           pexp_loc_stack = [];
+                                           pexp_attributes = []
+                                         },
+                                          [(Nolabel,
+                                             {
+                                               pexp_desc =
+                                                 (Pexp_constant
+                                                    (Pconst_integer
+                                                       ("100", None)));
+                                               pexp_loc =
+                                                 {
+                                                   loc_start =
+                                                     {
+                                                       pos_fname =
+                                                         "./gen6.ml";
+                                                       pos_lnum = 5;
+                                                       pos_bol = 83;
+                                                       pos_cnum = 87
+                                                     };
+                                                   loc_end =
+                                                     {
+                                                       pos_fname =
+                                                         "./gen6.ml";
+                                                       pos_lnum = 5;
+                                                       pos_bol = 83;
+                                                       pos_cnum = 90
+                                                     };
+                                                   loc_ghost = false
+                                                 };
+                                               pexp_loc_stack = [];
+                                               pexp_attributes = []
+                                             });
+                                          (Nolabel,
+                                            (Ppxlib.Ast_builder.Default.eint
+                                               ~loc:Ppxlib.Location.none
+                                               const_val))]));
+                                   pexp_loc =
+                                     {
+                                       loc_start =
+                                         {
+                                           pos_fname = "./gen6.ml";
+                                           pos_lnum = 5;
+                                           pos_bol = 83;
+                                           pos_cnum = 87
+                                         };
+                                       loc_end =
+                                         {
+                                           pos_fname = "./gen6.ml";
+                                           pos_lnum = 5;
+                                           pos_bol = 83;
+                                           pos_cnum = 109
+                                         };
+                                       loc_ghost = false
+                                     };
+                                   pexp_loc_stack = [];
+                                   pexp_attributes = []
+                                 };
+                                {
+                                  pexp_desc =
+                                    (Pexp_construct
+                                       ({
+                                          txt = (Lident "::");
+                                          loc =
+                                            {
+                                              loc_start =
+                                                {
+                                                  pos_fname = "./gen6.ml";
+                                                  pos_lnum = 5;
+                                                  pos_bol = 83;
+                                                  pos_cnum = 111
+                                                };
+                                              loc_end =
+                                                {
+                                                  pos_fname = "./gen6.ml";
+                                                  pos_lnum = 5;
+                                                  pos_bol = 83;
+                                                  pos_cnum = 145
+                                                };
+                                              loc_ghost = true
+                                            }
+                                        },
+                                         (Some
+                                            {
+                                              pexp_desc =
+                                                (Pexp_tuple
+                                                   [Ppxlib.Ast_builder.Default.eint
+                                                      ~loc:Ppxlib.Location.none
+                                                      computed_val;
+                                                   {
+                                                     pexp_desc =
+                                                       (Pexp_construct
+                                                          ({
+                                                             txt =
+                                                               (Lident "::");
+                                                             loc =
+                                                               {
+                                                                 loc_start =
+                                                                   {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 132
+                                                                   };
+                                                                 loc_end =
+                                                                   {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 145
+                                                                   };
+                                                                 loc_ghost =
+                                                                   true
+                                                               }
+                                                           },
+                                                            (Some
+                                                               {
+                                                                 pexp_desc =
+                                                                   (Pexp_tuple
+                                                                    [
+                                                                    {
+                                                                    pexp_desc
+                                                                    =
+                                                                    (Pexp_ident
+                                                                    {
+                                                                    txt =
+                                                                    (Lident
+                                                                    "delayed_val");
+                                                                    loc =
+                                                                    {
+                                                                    loc_start
+                                                                    =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 132
+                                                                    };
+                                                                    loc_end =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 143
+                                                                    };
+                                                                    loc_ghost
+                                                                    = false
+                                                                    }
+                                                                    });
+                                                                    pexp_loc
+                                                                    =
+                                                                    {
+                                                                    loc_start
+                                                                    =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 132
+                                                                    };
+                                                                    loc_end =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 143
+                                                                    };
+                                                                    loc_ghost
+                                                                    = false
+                                                                    };
+                                                                    pexp_loc_stack
+                                                                    = [];
+                                                                    pexp_attributes
+                                                                    = []
+                                                                    };
+                                                                    {
+                                                                    pexp_desc
+                                                                    =
+                                                                    (Pexp_construct
+                                                                    ({
+                                                                    txt =
+                                                                    (Lident
+                                                                    "[]");
+                                                                    loc =
+                                                                    {
+                                                                    loc_start
+                                                                    =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 144
+                                                                    };
+                                                                    loc_end =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 145
+                                                                    };
+                                                                    loc_ghost
+                                                                    = true
+                                                                    }
+                                                                    }, None));
+                                                                    pexp_loc
+                                                                    =
+                                                                    {
+                                                                    loc_start
+                                                                    =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 144
+                                                                    };
+                                                                    loc_end =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 145
+                                                                    };
+                                                                    loc_ghost
+                                                                    = true
+                                                                    };
+                                                                    pexp_loc_stack
+                                                                    = [];
+                                                                    pexp_attributes
+                                                                    = []
+                                                                    }]);
+                                                                 pexp_loc =
+                                                                   {
+                                                                    loc_start
+                                                                    =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 132
+                                                                    };
+                                                                    loc_end =
+                                                                    {
+                                                                    pos_fname
+                                                                    =
+                                                                    "./gen6.ml";
+                                                                    pos_lnum
+                                                                    = 5;
+                                                                    pos_bol =
+                                                                    83;
+                                                                    pos_cnum
+                                                                    = 145
+                                                                    };
+                                                                    loc_ghost
+                                                                    = true
+                                                                   };
+                                                                 pexp_loc_stack
+                                                                   = [];
+                                                                 pexp_attributes
+                                                                   = []
+                                                               })));
+                                                     pexp_loc =
+                                                       {
+                                                         loc_start =
+                                                           {
+                                                             pos_fname =
+                                                               "./gen6.ml";
+                                                             pos_lnum = 5;
+                                                             pos_bol = 83;
+                                                             pos_cnum = 132
+                                                           };
+                                                         loc_end =
+                                                           {
+                                                             pos_fname =
+                                                               "./gen6.ml";
+                                                             pos_lnum = 5;
+                                                             pos_bol = 83;
+                                                             pos_cnum = 145
+                                                           };
+                                                         loc_ghost = true
+                                                       };
+                                                     pexp_loc_stack = [];
+                                                     pexp_attributes = []
+                                                   }]);
+                                              pexp_loc =
+                                                {
+                                                  loc_start =
+                                                    {
+                                                      pos_fname = "./gen6.ml";
+                                                      pos_lnum = 5;
+                                                      pos_bol = 83;
+                                                      pos_cnum = 111
+                                                    };
+                                                  loc_end =
+                                                    {
+                                                      pos_fname = "./gen6.ml";
+                                                      pos_lnum = 5;
+                                                      pos_bol = 83;
+                                                      pos_cnum = 145
+                                                    };
+                                                  loc_ghost = true
+                                                };
+                                              pexp_loc_stack = [];
+                                              pexp_attributes = []
+                                            })));
+                                  pexp_loc =
+                                    {
+                                      loc_start =
+                                        {
+                                          pos_fname = "./gen6.ml";
+                                          pos_lnum = 5;
+                                          pos_bol = 83;
+                                          pos_cnum = 111
+                                        };
+                                      loc_end =
+                                        {
+                                          pos_fname = "./gen6.ml";
+                                          pos_lnum = 5;
+                                          pos_bol = 83;
+                                          pos_cnum = 145
+                                        };
+                                      loc_ghost = true
+                                    };
+                                  pexp_loc_stack = [];
+                                  pexp_attributes = []
+                                }]);
+                           pexp_loc =
+                             {
+                               loc_start =
+                                 {
+                                   pos_fname = "./gen6.ml";
+                                   pos_lnum = 5;
+                                   pos_bol = 83;
+                                   pos_cnum = 87
+                                 };
+                               loc_end =
+                                 {
+                                   pos_fname = "./gen6.ml";
+                                   pos_lnum = 5;
+                                   pos_bol = 83;
+                                   pos_cnum = 145
+                                 };
+                               loc_ghost = true
+                             };
+                           pexp_loc_stack = [];
+                           pexp_attributes = []
+                         })));
+               pexp_loc =
+                 {
+                   loc_start =
+                     {
+                       pos_fname = "./gen6.ml";
+                       pos_lnum = 5;
+                       pos_bol = 83;
+                       pos_cnum = 85
+                     };
+                   loc_end =
+                     {
+                       pos_fname = "./gen6.ml";
+                       pos_lnum = 5;
+                       pos_bol = 83;
+                       pos_cnum = 145
+                     };
+                   loc_ghost = false
+                 };
+               pexp_loc_stack = [];
+               pexp_attributes = []
+             }));
+      pexp_loc =
+        {
+          loc_start =
+            {
+              pos_fname = "./gen6.ml";
+              pos_lnum = 4;
+              pos_bol = 56;
+              pos_cnum = 58
+            };
+          loc_end =
+            {
+              pos_fname = "./gen6.ml";
+              pos_lnum = 5;
+              pos_bol = 83;
+              pos_cnum = 145
+            };
+          loc_ghost = false
+        };
+      pexp_loc_stack = [];
+      pexp_attributes = []
+    }

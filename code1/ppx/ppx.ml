@@ -12,12 +12,6 @@ open struct
       ]
 
 
-  let lift_unmarshal_expr ~loc ~marshaled_expr =
-    Ml.eapply ~loc
-      (Ml.evar ~loc "Marshal.from_string")
-      [ Ml.estring ~loc marshaled_expr; Ml.eint ~loc 0 ]
-
-
   let lift_int_expr ~loc int_expr =
     Ml.pexp_apply ~loc
       (Ml.evar ~loc "Ppxlib.Ast_builder.Default.eint")
@@ -29,20 +23,18 @@ end
 
 open Ppxlib
 
-let mapper =
+let lift =
   let loc = noloc in
   object (_self)
-    inherit Ppxlib.Ast_traverse.map as super
-    (* inherit! Ppxlib_metaquot_lifters.expression_lifters loc *)
+    inherit [Ppxlib.expression] Ppxlib.Ast_traverse.lift as super
+    inherit! Ppxlib_metaquot_lifters.expression_lifters loc
 
     method! expression e =
       match e.pexp_desc with
       | Pexp_extension
           (( { txt = "int"; _ },
              PStr [ { pstr_desc = Pstr_eval (int_exp, _); _ } ] ) as ext) ->
-        int_exp
-        (* let marshaled_expr = Marshal.to_string int_exp [] in
-           lift_unmarshal_expr ~loc ~marshaled_expr *)
+        lift_int_expr ~loc int_exp
       | Pexp_extension (({ txt = "int"; _ }, _) as ext) ->
         failwith "invalid [%int] payload"
       | _ -> super#expression e
@@ -52,9 +44,7 @@ let mapper =
 let process_code_extension ~ctxt code =
   let _loc = Expansion_context.Extension.extension_point_loc ctxt in
   (* let code_code = Ppxlib.Ast_traverse.do_not_enter_let_module in *)
-  let spliced_code = mapper#expression code in
-  let marshaled_expr = Marshal.to_string spliced_code [] in
-  let code_code = lift_unmarshal_expr ~loc:noloc ~marshaled_expr in
+  let code_code = lift#expression code in
   lift_print_expr ~loc:noloc code_code
 
 
