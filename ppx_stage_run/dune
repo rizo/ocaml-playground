@@ -1,0 +1,3 @@
+(executable
+ (name run)
+ (libraries ppxlib ppx_stage.ppx))

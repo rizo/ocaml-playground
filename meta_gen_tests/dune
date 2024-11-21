@@ -34,6 +34,12 @@
 (rule
   (alias runtest)
   (action (diff out3.ml out3.ml.actual)))
+(rule
+  (action
+    (with-stdout-to gen3.out.ml.actual (run ../ppx_stage_run/run.exe ./gen3.ml))))
+(rule
+  (alias runtest)
+  (action (diff gen3.out.ml gen3.out.ml.actual)))
 
 
 ;; gen4
@@ -78,7 +84,7 @@
 
 (rule
   (action
-    (with-stdout-to gen6.out.ml.actual (run ./../code1/gen/gen.exe ./gen6.ml))))
+    (with-stdout-to gen6.out.ml.actual (run ./../code1/run/run.exe ./gen6.ml))))
 (rule
   (alias runtest)
   (action (diff gen6.out.ml gen6.out.ml.actual)))
