@@ -1,0 +1,7 @@
+(library
+ (name ppx_stage_expander)
+ (public_name ppx_stage.ppx)
+ (kind ppx_rewriter)
+ (ppx_runtime_libraries ppx_stage.runtime-lib)
+ (preprocess (pps ppxlib.metaquot))
+ (libraries ppx_stage.runtime-lib ppxlib))

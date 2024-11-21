@@ -1,0 +1,14 @@
+opam-version: "1.2"
+maintainer: "stephen.dolan@cl.cam.ac.uk"
+authors: ["Stephen Dolan"]
+homepage: "https://github.com/stedolan/ppx_stage"
+bug-reports: "https://github.com/stedolan/ppx_stage/issues"
+dev-repo: "https://github.com/stedolan/ppx_stage.git"
+license: "MIT"
+build:
+[[ "dune" "build" "-p" name "-j" jobs ]]
+available: [ ocaml-version >= "4.08" ]
+depends: [
+  "dune" {build & >= "2.0"}
+  "ppxlib"
+]
