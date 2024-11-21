@@ -12,8 +12,9 @@ let expand ~ctxt _input =
 
 let extension =
   Extension.V3.declare "eval" Ppxlib.Extension.Context.expression
-    Ast_pattern.(single_expr_payload ( __))
+    Ast_pattern.(single_expr_payload __)
     expand
+
 
 let () =
   Ppxlib.Driver.V2.register_transformation "eval" ~extensions:[ extension ]
