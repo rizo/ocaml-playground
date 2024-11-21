@@ -1,0 +1,31 @@
+;; gen1
+(executable (name gen1))
+(rule
+  (action
+    (with-stdout-to out1.ml.actual (run ./gen1.exe))))
+(rule
+  (alias runtest)
+  (action (diff out1.ml out1.ml.actual)))
+
+
+;; gen2
+(executable (name gen2))
+(rule
+  (action
+    (with-stdout-to out2.ml.actual (run ./gen2.exe))))
+(rule
+  (alias runtest)
+  (action (diff out2.ml out2.ml.actual)))
+
+
+;; gen3
+(executable
+  (name gen3)
+  (libraries ppx_stage.runtime-lib)
+  (preprocess (pps ppx_stage.ppx)))
+(rule
+  (action
+    (with-stdout-to out3.ml.actual (run ./gen3.exe))))
+(rule
+  (alias runtest)
+  (action (diff out3.ml out3.ml.actual)))
