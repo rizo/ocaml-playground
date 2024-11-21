@@ -1,0 +1,26 @@
+(test
+ (name input)
+ (preprocess (pps ppx_eval)))
+
+(executable
+ (name run)
+ (modules run)
+ (libraries ppxlib ppx_eval))
+
+(rule
+ (target output.ml.actual)
+ (deps
+  (:run run.exe)
+  (:input input.ml))
+ (action
+  (with-outputs-to %{target}
+   (run ./%{run} --impl %{input})
+   ;(pipe-stdout
+   ; (run ./%{run} --impl %{input})
+   ; (run ocamlformat --impl -))
+   )))
+
+(rule
+ (alias runtest)
+ (action
+  (diff output.ml output.ml.actual)))

@@ -1,5 +1,4 @@
 profile=conventional
-align-cases = false
 break-cases = fit
 cases-matching-exp-indent = normal
 exp-grouping=preserve
