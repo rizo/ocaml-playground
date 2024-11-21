@@ -61,3 +61,24 @@
 (rule
   (alias runtest)
   (action (diff out5.ml out5.ml.actual)))
+
+
+;; gen6
+(executable
+  (name gen6)
+  (modules gen6)
+  (preprocess (pps code1_ppx))
+  (libraries code1))
+(rule
+  (action
+    (with-stdout-to out6.ml.actual (run ./gen6.exe))))
+(rule
+  (alias runtest)
+  (action (diff out6.ml out6.ml.actual)))
+
+(rule
+  (action
+    (with-stdout-to gen6.out.ml.actual (run ./../code1/gen/gen.exe ./gen6.ml))))
+(rule
+  (alias runtest)
+  (action (diff gen6.out.ml gen6.out.ml.actual)))

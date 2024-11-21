@@ -1,0 +1,4 @@
+(library
+  (name code1_ppx)
+  (libraries ppxlib ppxlib.astlib ppxlib.metaquot_lifters)
+  (kind ppx_rewriter))
