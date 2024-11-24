@@ -1,6 +1,8 @@
 open struct
   module Ml = Ppxlib.Ast_builder.Default
   let noloc = Ppxlib.Location.none
+  let ident = Ppxlib.Longident.parse
+  let ident_noloc x = Ppxlib.Loc.make ~loc:noloc (Ppxlib.Longident.parse x)
 end
 
 open struct
@@ -45,7 +47,8 @@ let process_code_extension ~ctxt code =
   let _loc = Expansion_context.Extension.extension_point_loc ctxt in
   (* let code_code = Ppxlib.Ast_traverse.do_not_enter_let_module in *)
   let code_code = lift#expression code in
-  lift_print_expr ~loc:noloc code_code
+  Ml.pexp_constraint ~loc:noloc code_code
+    (Ml.ptyp_constr ~loc:noloc (ident_noloc "Ppxlib.expression") [])
 
 
 let code_extension =
